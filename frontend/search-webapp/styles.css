@@ -1,59 +1,119 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Lucida Console', 'Courier New', Courier, monospace;
     margin: 0;
     padding: 20px;
+    background-color: #f0f0f0;  /* Light background color for the whole page */
+    background-image: url('Background.jpeg');  /* Replace with actual image if required */
+    background-size: cover; /* Ensures the image covers the entire background */
+    background-position: center center; /* Centers the background */
+    background-attachment: fixed;
 }
+
 h1, h2 {
-    margin-bottom: 10px;
-}
-.container {
-    max-width: 600px;
-    margin: 0 auto;
-}
-.drop-area {
-    border: 2px dashed #ccc;
-    border-radius: 5px;
-    padding: 20px;
+    font-family:'Lucida Console', 'Courier New', Courier, monospace;
+    font-weight: 700;
+    margin-bottom: 20px;
     text-align: center;
-    cursor: pointer;
+    font-weight: 700;
 }
-.drop-area:hover {
-    background-color: #f9f9f9;
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: rgba(248, 248, 248, 0.623);  /* Semi-transparent white background */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 }
-.file-input {
-    display: none;
-}
+
+/* Search Bar Styling */
 .search-container {
     position: relative;
-    margin-top: 20px;
+    margin-top: 30px;
+    text-align: center;
 }
 .search-input {
-    width: 94%;
-    padding: 10px 15px;
-    border: 2px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+    width: 80%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 18px;
+    margin-bottom: 20px;
+    transition: 0.3s ease;
 }
 .search-input:focus {
     outline: none;
     border-color: #007bff;
 }
 .search-button {
-    position: absolute;
-    top: 73%;
-    right: 10px;
-    transform: translateY(-50%);
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    transition: 0.3s ease;
+}
+.search-button:hover {
+    background-color: #0056b3;
+}
+
+/* Image Gallery Section */
+.image-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+.image-gallery img {
+    width: 45%;
+    max-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.image-gallery img:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+.drop-area {
+    border: 2px dashed #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    margin-top: 20px;
+}
+.drop-area:hover {
+    background-color: #e9e9e9;
+}
+.file-input {
+    display: none;
+}
+
+.file-input + label {
     background-color: #007bff;
     color: #fff;
-    border: none;
+    padding: 10px 15px;
     border-radius: 5px;
-    padding: 6px 12px;
-    font-size: 16px;
     cursor: pointer;
-    font-weight: 700;
 }
+.file-input + label:hover {
+    background-color: #0056b3;
+}
+
+#fileInfo {
+    display: none;
+    margin-top: 20px;
+}
+
 .tag-input {
-    width: 94%;
+    width: 100%;
     padding: 10px 15px;
     border: 2px solid #ccc;
     border-radius: 5px;
@@ -63,10 +123,8 @@ h1, h2 {
     outline: none;
     border-color: #007bff;
 }
+
 .upload-button {
-    position: relative;
-    right: -85%;
-    top: -36px;
     background-color: #007bff;
     color: #fff;
     border: none;
@@ -75,12 +133,20 @@ h1, h2 {
     font-size: 16px;
     cursor: pointer;
     font-weight: 700;
+    margin-top: 10px;
 }
-#success {
+
+#success, #failure {
     display: none;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+}
+
+#success {
     color: green;
 }
+
 #failure {
-    display: none;
     color: red;
 }
