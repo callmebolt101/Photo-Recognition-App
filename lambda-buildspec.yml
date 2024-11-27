@@ -1,0 +1,36 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+
+  pre_build:
+    commands:
+      - echo "Installing dependencies"
+      - pip install requests-aws4auth -t lambda/LF1
+      - pip install requests-aws4auth -t lambda/LF2
+      - pip install requests -t lambda/LF1
+      - pip install requests -t lambda/LF2
+
+  build:
+    commands:
+      - echo "Building LF1 (index-photos-2)"
+      - cd lambda/LF1
+      - zip -r ../LF1.zip *
+      - aws s3 cp ../LF1.zip s3://assignment3-lambda-codepipeline
+      - echo "LF1.zip uploaded to S3"
+
+      - echo "Building LF2 (search-keywords-2)"
+      - cd ../LF2
+      - zip -r ../LF2.zip *
+      - aws s3 cp ../LF2.zip s3://assignment3-lambda-codepipeline
+      - echo "LF2.zip uploaded to S3"
+
+  post_build:
+    commands:
+      - echo "Updating Lambda functions"
+      - aws lambda update-function-code --function-name index-photos-2 --s3-bucket assignment3-lambda-codepipeline --s3-key LF1.zip
+      - echo "LF1 (index-photos-2) Lambda function updated"
+      - aws lambda update-function-code --function-name search-keywords-2 --s3-bucket assignment3-lambda-codepipeline --s3-key LF2.zip
+      - echo "LF2 (search-keywords-2) Lambda function updated"
