@@ -1,0 +1,11 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - echo "frontend-buildspec has been called"
+
+  post_build:
+    commands:
+      - echo "Pushing to S3"
+      - aws s3 sync frontend/search-webapp s3://assignment2-b1-frontend-cf
