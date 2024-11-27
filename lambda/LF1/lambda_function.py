@@ -21,6 +21,7 @@ auth = AWS4Auth(AWS_ACCESS_KEY, AWS_SECRET_KEY, region, 'es')
 es_endpoint = 'https://search-photos-f6pyca26k2g3p6doauwlowykqe.us-east-1.es.amazonaws.com'
 index_name = 'photos'
 
+
 def lambda_handler(event, context):
     logger.debug("Function invoked: %s", event)
     
