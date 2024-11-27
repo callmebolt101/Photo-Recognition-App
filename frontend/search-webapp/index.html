@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Assignment 3</title>
+<link rel="stylesheet" href="styles.css">
+<script type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
+<script type="text/javascript" src="lib/url-template/url-template.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
+<script type="text/javascript" src="apigClient.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Cloud Assignment 3</h1>
+        
+        <div class="search-container">
+            <h2>Search File</h2>
+            <input type="text" name="search" id="search" class="search-input" placeholder="Enter file name to search">
+            <button type="submit" class="search-button" onclick="searchFiles()">Search</button>
+        </div>
+
+        
+        
+        <div id="img-container"></div>
+
+        <h2>Upload File</h2>
+        
+        <div class="drop-area" id="dropArea">
+            <h2>Drag & Drop File Here</h2>
+            <p>or</p>
+            <input type="file" name="fileToUpload" id="fileToUpload" class="file-input" accept="image/*">
+            <label for="fileToUpload">Choose a file</label>
+        </div>
+
+        <div id="fileInfo" style="display: none;">
+            <h3>File to be uploaded</h3>
+            <p>File Name: <span id="fileName"></span></p>
+            <h3>Tags</h3>
+            <input type="text" id="tags" class="tag-input" placeholder="Enter tags for the file">
+            <button type="submit" class="upload-button" onclick="uploadFiles()">Upload</button>
+        </div>
+
+        <p id="success">Successfully uploaded the file</p>
+        <p id="failure">Upload failed</p>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
