@@ -1,160 +1,84 @@
 import json
-import boto3
 import logging
+import boto3
+import base64
 from requests_aws4auth import AWS4Auth
 import requests
-import os
 
 # Logger setup
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-# AWS Credentials and Configuration
-AWS_ACCESS_KEY = "AKIA6GBMDD6SZYOGLXR3"
-AWS_SECRET_KEY = "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"
+# AWS credentials and region
+AWS_ACCESS_KEY = "AKIA6GBMDD6S7T6F7O5D"
+AWS_SECRET_KEY = "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"
 region = 'us-east-1'
 
-# Lex Bot Configuration
-lex_bot_id = 'B65UNTXULI'
-lex_bot_alias_id = 'TSTALIASID'
-lex_locale_id = 'en_US'
-
-# OpenSearch Configuration
-es_endpoint = "https://search-photos-f6pyca26k2g3p6doauwlowykqe.us-east-1.es.amazonaws.com"
-index_name = "photos"
-s3_bucket_url = "https://assignment3photobucket.s3.us-east-1.amazonaws.com"
-
-# AWS4Auth for OpenSearch
+# Authentication for OpenSearch
 auth = AWS4Auth(AWS_ACCESS_KEY, AWS_SECRET_KEY, region, 'es')
 
+# OpenSearch configuration
+es_endpoint = 'https://search-photos-f6pyca26k2g3p6doauwlowykqe.us-east-1.es.amazonaws.com'
+index_name = 'photos'
+
+
 def lambda_handler(event, context):
-    logger.debug("Received Event: %s", json.dumps(event, indent=2))
-
+    logger.debug("Function invoked: %s", event)
+    
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    object_key = event['Records'][0]['s3']['object']['key']
+    created_timestamp = event['Records'][0]['eventTime']
+    
+    logger.debug("Bucket: %s, Object Key: %s, Timestamp: %s", bucket_name, object_key, created_timestamp)
+    
+    s3_client = boto3.client('s3')
+    rekognition_client = boto3.client('rekognition')
+    
+    # Get the image from S3
+    response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+    base64_encoded_image = response['Body'].read()
+    
     try:
-        # Extract query parameter
-        q = event["queryStringParameters"]["q"]
-        logger.debug(f"Extracted query parameter: {q}")
-
-        # Call Lex
-        lex_client = boto3.client('lexv2-runtime', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY, region_name=region)
-        lex_response = lex_client.recognize_text(
-            botId=lex_bot_id,
-            botAliasId=lex_bot_alias_id,
-            localeId=lex_locale_id,
-            sessionId="sessionId",
-            text=q
-        )
-        logger.debug("Lex Response: %s", json.dumps(lex_response))
-
-        q1 = ""
-        q2 = ""
-
-        # Use the correct variable `lex_response`
-        if 'sessionState' in lex_response and 'intent' in lex_response['sessionState'] and 'slots' in lex_response['sessionState']['intent']:
-            if 'query1' in lex_response['sessionState']['intent']['slots'] and lex_response['sessionState']['intent']['slots']['query1'] is not None and 'value' in lex_response['sessionState']['intent']['slots']['query1'] and lex_response['sessionState']['intent']['slots']['query1']['value'] is not None:
-                q1 = lex_response['sessionState']['intent']['slots']['query1']['value']['interpretedValue']
-            if 'query2' in lex_response['sessionState']['intent']['slots'] and lex_response['sessionState']['intent']['slots']['query2'] is not None and 'value' in lex_response['sessionState']['intent']['slots']['query2'] and lex_response['sessionState']['intent']['slots']['query2']['value'] is not None:
-                q2 = lex_response['sessionState']['intent']['slots']['query2']['value']['interpretedValue']
-        # search_intent_slots = lex_response["interpretations"][1]["intent"]["slots"]
-
-        # Extract query1
-        # if search_intent_slots["query1"] and search_intent_slots["query1"]["value"] and search_intent_slots["query1"]["value"]["interpretedValue"]:
-        #     q1 = search_intent_slots["query1"]["value"]["interpretedValue"]
-
-        # # Extract query2
-        # if search_intent_slots["query2"] and search_intent_slots["query2"]["value"] and search_intent_slots["query2"]["value"]["interpretedValue"]:
-        #     q2 = search_intent_slots["query2"]["value"]["interpretedValue"]
-
-        logger.info(f"Extracted slots - q1: {q1}, q2: {q2}")
-
-        # slots = lex_response.get("sessionState", {}).get("intent", {}).get("slots", {})
-        # q1 = extract_slot_value(slots, "query1")
-        # q2 = extract_slot_value(slots, "query2")
-        logger.info(f"Extracted slots - q1: {q1}, q2: {q2}")
-
-        # Query OpenSearch
-        images = []
-        if q1:
-            images.extend(search_opensearch(q1))
-        if q2:
-            images.extend(search_opensearch(q2))
-        logger.debug(images)
-        # Return results
-        # return {
-        #     'headers': {
-        #         'Access-Control-Allow-Headers': 'Content-Type',
-        #         'Access-Control-Allow-Origin': '*',
-        #         'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-        #     },
-        #     'statusCode': 200,
-        #     'messages': "Search completed successfully.",
-        #     'images': images
-        # }
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Headers": "Content-Type",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-            },
-            "body": json.dumps({
-                "messages": "Search completed successfully.",
-                "images": images
-        })
-        }
-
+        decoded_image = base64.b64decode(base64_encoded_image)
     except Exception as e:
-        logger.error("Error processing request: %s", str(e), exc_info=True)
+        logger.error("Error decoding base64 image: %s", e)
         return {
-            'headers': {
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-            },
-            'statusCode': 500,
-            'messages': f"An error occurred: {str(e)}"
+            'statusCode': 400,
+            'body': json.dumps('Error decoding the base64 image')
         }
-
-
-def extract_slot_value(slots, slot_name):
-    """
-    Extracts the interpreted value of a given slot.
-    """
-    slot = slots.get(slot_name, {})
-    return slot.get('value', {}).get('interpretedValue', "").strip()
-
-
-def search_opensearch(keyword):
-    """
-    Searches OpenSearch for photos matching the given keyword.
-    """
-    try:
-        headers = {"Content-Type": "application/json"}
-        query = {
-            "query": {
-                "bool": {
-                    "should": [{"match": {"labels": keyword}}]
-                }
-            }
-        }
-        es_url = f"{es_endpoint}/{index_name}/_search"
-
-        logger.debug(f"Querying OpenSearch with keyword: {keyword}")
-        response = requests.post(es_url, auth=auth, headers=headers, json=query)
-        response.raise_for_status()
-
-        hits = response.json().get('hits', {}).get('hits', [])
-        logger.debug(f"Found {len(hits)} hits in OpenSearch.")
-
-        # Construct image URLs
-        images = [
-            f"{s3_bucket_url}/{hit['_source']['objectKey']}" for hit in hits if '_source' in hit and 'objectKey' in hit['_source']
-        ]
-        return images
-
-    except requests.exceptions.RequestException as re:
-        logger.error(f"OpenSearch RequestException: {str(re)}", exc_info=True)
-        return []
-    except Exception as e:
-        logger.error(f"Unexpected error querying OpenSearch: {str(e)}", exc_info=True)
-        return []
+    # Detect labels using Rekognition
+    labels = rekognition_client.detect_labels(Image={'Bytes': decoded_image}, MaxLabels=5)
+    detected_labels = [label['Name'] for label in labels['Labels']]
+    logger.debug("Rekognition Detected Labels: %s", detected_labels)
+    # logger.debug("Custom Labels: %s", custom_labels)
+    # Fetch custom labels from S3 object metadata
+    metadata_response = s3_client.head_object(Bucket=bucket_name, Key=object_key)
+    logger.debug("Metadata Response: %s", metadata_response)
+    custom_labels = metadata_response.get('Metadata', {}).get('customlabels', '').split(',')
+    logger.debug("Custom Labels: %s", custom_labels)
+    detected_labels.extend(custom_labels)
+    
+    # Prepare the document to be indexed in OpenSearch
+    es_document = {
+        "objectKey": object_key,
+        "bucket": bucket_name,
+        "createdTimestamp": created_timestamp,
+        "labels": detected_labels
+    }
+    logger.debug("Detected Labels%s", es_document["labels"])
+    # Index the document in OpenSearch
+    url = f"{es_endpoint}/{index_name}/_doc/{object_key}"
+    headers = {"Content-Type": "application/json"}
+    es_response = requests.post(url, auth=auth, json=es_document, headers=headers)
+    
+    logger.debug("OpenSearch Response: %s", es_response.text)
+    
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT',
+        },
+        'body': json.dumps('Successfully processed image and indexed in OpenSearch!')
+    }
