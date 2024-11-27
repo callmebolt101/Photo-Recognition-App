@@ -2,22 +2,25 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Photo Album Web Application Infrastructure
 
 Resources:
-  # S3 Bucket for Frontend
+  # S3 Bucket for Frontend (now hosted as a public website)
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "assignment2-b1-frontend-cf"
+      BucketName: "assignment2-b1-frontend-cf2222"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
         IgnorePublicAcls: false
         RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+        ErrorDocument: "error.html"
 
   # S3 Bucket for Photos
   PhotosBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "assignment3photobucket"
+      BucketName: "assignment3photobucket22222"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
@@ -52,7 +55,7 @@ Resources:
   IndexPhotosFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: "assignment3-LF1-index-photos-cf"
+      FunctionName: "assignment3-LF1-index-photos-cf2222"
       Runtime: "python3.12"
       Handler: "index.handler"
       Code:
@@ -63,7 +66,7 @@ Resources:
   SearchPhotosFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: "assignment3-LF2-search-photos-cf"
+      FunctionName: "assignment3-LF2-search-photos-cf2222"
       Runtime: "python3.12"
       Handler: "search.handler"
       Code:
@@ -71,7 +74,22 @@ Resources:
         S3Key: "LF2.zip"
       Role: !GetAtt LambdaExecutionRole.Arn
 
-  # API Gateway
+  # S3 Bucket Notification for Lambda (IndexPhotosFunction)
+  S3Notification:
+    Type: AWS::S3::BucketNotification
+    Properties:
+      Bucket: !Ref PhotosBucket
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: "s3:ObjectCreated:*"
+            Function: !GetAtt IndexPhotosFunction.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: ".jpg"
+
+  # API Gateway for Photo App
   PhotoAppAPI:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -124,9 +142,9 @@ Resources:
       HttpMethod: OPTIONS
       AuthorizationType: NONE
       Integration:
-        Type: AWS_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchPhotosFunction.Arn}/invocations"
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
         IntegrationResponses:
           - StatusCode: 200
             ResponseTemplates:
@@ -209,7 +227,7 @@ Resources:
         Type: AWS
         Uri: arn:aws:apigateway:us-east-1:s3:path/{bucket}/{key}
         IntegrationHttpMethod: PUT
-        Credentials: arn:aws:iam::767397968615:role/service-role/assingment3-LF1-index-photos-role-lwvbof8w
+        Credentials: arn:aws:iam::975050055589:role/service-role/index-photos-2-role-grrot91z
         RequestTemplates:
           application/json: '{"statusCode": 200}'
         IntegrationResponses:
@@ -234,9 +252,11 @@ Outputs:
     Value: !Ref FrontendBucket
   PhotoBucketName:
     Value: !Ref PhotosBucket
+  FrontendBucketPublicURL:
+    Value: !Sub "http://${FrontendBucket}.s3-website-${AWS::Region}.amazonaws.com"
   IndexPhotosFunctionArn:
     Value: !GetAtt IndexPhotosFunction.Arn
   SearchPhotosFunctionArn:
     Value: !GetAtt SearchPhotosFunction.Arn
   PhotoAppAPIUrl:
-    Value: !Sub "https://${PhotoAppAPI}.execute-api.${AWS::Region}.amazonaws.com/dev-v1"
+    Value: !Sub "https://${PhotoAppAPI}.execute-api.${AWS::Region}.amazonaws.com/prod2"
